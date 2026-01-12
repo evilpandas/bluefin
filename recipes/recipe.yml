@@ -18,8 +18,8 @@ modules:
       - https://negativo17.org/repos/fedora-multimedia.repo
     install:
       - displaylink
-      - libevdi     # The library required by DisplayLink
-      - kernel-devel # Required for building the module
+      - libevdi     # User-space library for DisplayLink
+      - kernel-devel # Required for headers
 
   - type: script
     scripts:
