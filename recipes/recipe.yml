@@ -3,8 +3,6 @@ name: evilpandas-os
 description: My custom Bluefin image with DisplayLink and kernel dev tools.
 
 # This IS Bluefin. Bluefin is part of the ublue-os organization.
-# - bluefin-dx: Standard developer image (Intel/AMD)
-# - bluefin-dx-nvidia: If you have an Nvidia GPU
 base-image: ghcr.io/ublue-os/bluefin-dx
 image-version: latest
 
@@ -14,8 +12,8 @@ modules:
       - https://negativo17.org/repos/fedora-multimedia.repo
     install:
       - displaylink
-      - evdi
       - akmod-evdi
+      - libevdi     # The library required by DisplayLink
       - kernel-devel # Required for building the module
 
   - type: script
