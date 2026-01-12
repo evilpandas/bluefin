@@ -7,19 +7,17 @@ base-image: ghcr.io/ublue-os/bluefin-dx
 image-version: latest
 
 modules:
-  - type: akmods
-    install:
-      - evdi
-    repos:
-      - https://negativo17.org/repos/fedora-multimedia.repo
-
   - type: rpm-ostree
     repos:
       - https://negativo17.org/repos/fedora-multimedia.repo
     install:
+      - kernel-devel
+      - libevdi
       - displaylink
-      - libevdi     # User-space library for DisplayLink
-      - kernel-devel # Required for headers
+
+  - type: akmods
+    install:
+      - evdi
 
   - type: script
     scripts:
