@@ -7,18 +7,25 @@ base-image: ghcr.io/ublue-os/bluefin-dx
 image-version: latest
 
 modules:
-  - type: rpm-ostree
-    repos:
-      - https://negativo17.org/repos/fedora-multimedia.repo
-    install:
-      - kernel-devel
-      - libevdi
-      - displaylink
-
+  # First, we build the kernel module safely using the dedicated akmods module
   - type: akmods
     install:
       - evdi
 
+  # Second, we use a raw Containerfile snippet to install displaylink while 
+  # ignoring the problematic akmod-evdi dependency that fails in containers.
+  - type: containerfile
+    snippets:
+      - |
+        RUN curl -Lo /etc/yum.repos.d/fedora-multimedia.repo https://negativo17.org/repos/fedora-multimedia.repo && \
+            rpm-ostree install --advisory=fedora-multimedia \
+            kernel-devel \
+            libevdi \
+            displaylink \
+            --setopt=install_weak_deps=False \
+            --assume-yes
+
+  # Finally, our tuning script
   - type: script
     scripts:
       - displaylink-fix.sh
