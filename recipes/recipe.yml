@@ -20,7 +20,7 @@ modules:
         
         # 3. Install the DisplayLink components while ignoring weak dependencies.
         # This prevents the failing 'akmod-evdi' from being pulled in automatically.
-        RUN rpm-ostree install --advisory=fedora-multimedia \
+        RUN rpm-ostree install \
             libevdi \
             displaylink \
             --setopt=install_weak_deps=False \
