@@ -18,16 +18,17 @@ modules:
         # 2. Install kernel headers and build tools needed for the driver
         RUN rpm-ostree install kernel-devel kernel-headers akmods
         
-        # 3. Install the DisplayLink components while ignoring weak dependencies.
-        # This prevents the failing 'akmod-evdi' from being pulled in automatically.
+        # 3. Install the DisplayLink components.
+        # Note: rpm-ostree doesn't support --setopt or --assume-yes (those are DNF options).
+        # If akmod-evdi gets pulled in as a weak dependency and causes issues,
+        # we'll build evdi manually in the next step anyway.
         RUN rpm-ostree install \
             libevdi \
-            displaylink \
-            --setopt=install_weak_deps=False \
-            --assume-yes
+            displaylink
         
         # 4. Manually trigger the akmod build for evdi using the correct parameters
-        # for a containerized build environment.
+        # for a containerized build environment. This ensures evdi is built correctly
+        # even if akmod-evdi was installed or if it needs to be built from source.
         RUN akmods --force --kernels $(rpm -q kernel-devel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -n 1) --akmod evdi
 
   # Finally, our tuning script to enable the service and set config
