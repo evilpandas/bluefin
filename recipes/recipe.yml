@@ -21,16 +21,14 @@ modules:
         # 3. Install libevdi first (this should not pull in akmod-evdi)
         RUN rpm-ostree install libevdi
         
-        # 4. Install displaylink. akmod-evdi will be pulled in as a dependency.
-        # The akmod-evdi package's post-install scriptlet will fail because it tries
-        # to build as root. We'll work around this by installing akmod-evdi manually
-        # without running its scriptlets, then installing displaylink.
-        RUN dnf download akmod-evdi -y && \
-            rpm -Uvh --noscripts akmod-evdi*.rpm && \
-            rm -f akmod-evdi*.rpm || true
+        # 4. Download all DisplayLink-related packages with dependencies, then install
+        # them manually with --noscripts to skip the akmod-evdi post-install scriptlet
+        # that tries to build as root. We'll build the kernel module manually in step 6.
+        RUN dnf download --resolve displaylink akmod-evdi -y
         
-        # 5. Now install displaylink (akmod-evdi is already installed, so it won't try to build)
-        RUN rpm-ostree install displaylink
+        # 5. Install all downloaded packages without running scriptlets.
+        # This prevents akmod-evdi from trying to build as root during installation.
+        RUN rpm -Uvh --noscripts *.rpm && rm -f *.rpm
         
         # 6. Manually trigger the akmod build for evdi using the akmods user.
         # This ensures evdi is built correctly since we installed akmod-evdi without scriptlets.
