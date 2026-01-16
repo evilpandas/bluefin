@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-set -e
+
+# Tell this script to exit if there are any errors.
+# You should have this in every custom script, to ensure that your completed
+# builds actually ran successfully without any errors!
+set -oue pipefail
 
 # The DisplayLink RPM installs a systemd service, but it's often disabled by default.
 # We enable it here so it's active the moment you first boot into your custom image.

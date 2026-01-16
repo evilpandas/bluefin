@@ -30,10 +30,11 @@ modules:
         # This prevents akmod-evdi from trying to build as root during installation.
         RUN rpm -Uvh --noscripts *.rpm && rm -f *.rpm
         
-        # 6. Manually trigger the akmod build for evdi using the akmods user.
-        # This ensures evdi is built correctly since we installed akmod-evdi without scriptlets.
-        RUN su -s /bin/bash akmods -c "akmods --force --kernels $(rpm -q kernel-devel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -n 1) --akmod evdi" || \
-            akmods --force --kernels $(rpm -q kernel-devel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -n 1) --akmod evdi
+        # 6. Manually trigger the akmod build for evdi.
+        # Note: akmods needs to run as root to install the built RPMs.
+        # Since we're already running as root in the container build, we can run it directly.
+        # The build process runs as root, so akmods can install the built modules.
+        RUN akmods --force --kernels $(rpm -q kernel-devel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -n 1) --akmod evdi
 
   # Finally, our tuning script to enable the service and set config
   - type: script
