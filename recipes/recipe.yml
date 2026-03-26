@@ -38,7 +38,7 @@ modules:
         # Instead, we'll build the module directly using rpmbuild.
         RUN KERNEL_VERSION=$(rpm -q kernel-devel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -n 1) && \
             echo "Building evdi module for kernel ${KERNEL_VERSION}" && \
-            mkdir -p /root/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS} && \
+            mkdir -p /root/rpmbuild/BUILD /root/rpmbuild/RPMS /root/rpmbuild/SOURCES /root/rpmbuild/SPECS /root/rpmbuild/SRPMS && \
             cd /root/rpmbuild && \
             echo "Installing source RPM:" && \
             rpm -ivh /usr/src/akmods/evdi-kmod-*.src.rpm && \
