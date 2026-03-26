@@ -33,29 +33,25 @@ modules:
         # This prevents akmod-evdi from trying to build as root during installation.
         RUN rpm -Uvh --noscripts *.rpm && rm -f *.rpm
         
-        # 6. Manually trigger the akmod build for evdi and install the resulting kmod RPM.
-        # akmods builds a kmod-evdi RPM which contains the kernel module for the specific kernel.
-        # Note: akmods doesn't return non-zero on failure, so we check for the .failed.log
-        # We need to export TMPDIR so akmodsbuild (called by akmods) uses a writable temp location
+        # 6. Build evdi kernel module manually using rpmbuild (bypass akmods due to /tmp restrictions)
+        # The akmodsbuild script is hardcoded to use /tmp which has permission issues in containers.
+        # Instead, we'll build the module directly using rpmbuild.
         RUN KERNEL_VERSION=$(rpm -q kernel-devel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -n 1) && \
             echo "Building evdi module for kernel ${KERNEL_VERSION}" && \
-            mkdir -p /var/tmp/akmods-build && \
-            export TMPDIR=/var/tmp/akmods-build && \
-            akmods --force --kernels "${KERNEL_VERSION}" --akmod evdi ; \
-            if [ -f /var/cache/akmods/evdi/*-for-${KERNEL_VERSION}.failed.log ]; then \
-              echo "=== AKMODS BUILD FAILED ===" && \
-              echo "Error log contents:" && \
-              cat /var/cache/akmods/evdi/*-for-${KERNEL_VERSION}.failed.log && \
-              echo "=== Checking akmod source ===" && \
-              ls -la /usr/src/akmods/ && \
-              echo "=== Installed kernel packages ===" && \
-              rpm -qa | grep kernel && \
-              exit 1 ; \
-            fi && \
+            mkdir -p /root/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS} && \
+            cd /root/rpmbuild && \
+            echo "Installing source RPM:" && \
+            rpm -ivh /usr/src/akmods/evdi-kmod-*.src.rpm && \
+            echo "Building kmod with rpmbuild:" && \
+            rpmbuild --rebuild \
+              --define "_topdir /root/rpmbuild" \
+              --define "kernels ${KERNEL_VERSION}" \
+              --target x86_64 \
+              /usr/src/akmods/evdi-kmod-*.src.rpm && \
             echo "Looking for built kmod RPM:" && \
-            find /usr/src/akmods -name "kmod-evdi*.rpm" -ls && \
+            find /root/rpmbuild/RPMS -name "kmod-evdi*.rpm" -ls && \
             echo "Installing kmod-evdi RPM:" && \
-            rpm -Uvh /usr/src/akmods/kmod-evdi*.rpm && \
+            rpm -Uvh /root/rpmbuild/RPMS/x86_64/kmod-evdi*.rpm && \
             echo "Verifying module installation:" && \
             find /lib/modules/${KERNEL_VERSION} -name "evdi.ko*" -ls && \
             depmod -a "${KERNEL_VERSION}" && \
