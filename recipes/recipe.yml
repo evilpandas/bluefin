@@ -35,23 +35,23 @@ modules:
         
         # 6. Build evdi kernel module manually using rpmbuild (bypass akmods due to /tmp restrictions)
         # The akmodsbuild script is hardcoded to use /tmp which has permission issues in containers.
-        # Instead, we'll build the module directly using rpmbuild.
+        # /root also has permission restrictions, so we use /var/tmp/rpmbuild instead.
         RUN KERNEL_VERSION=$(rpm -q kernel-devel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -n 1) && \
             echo "Building evdi module for kernel ${KERNEL_VERSION}" && \
-            mkdir -p /root/rpmbuild/BUILD /root/rpmbuild/RPMS /root/rpmbuild/SOURCES /root/rpmbuild/SPECS /root/rpmbuild/SRPMS && \
-            cd /root/rpmbuild && \
+            mkdir -p /var/tmp/rpmbuild/BUILD /var/tmp/rpmbuild/RPMS /var/tmp/rpmbuild/SOURCES /var/tmp/rpmbuild/SPECS /var/tmp/rpmbuild/SRPMS && \
+            cd /var/tmp/rpmbuild && \
             echo "Installing source RPM:" && \
             rpm -ivh /usr/src/akmods/evdi-kmod-*.src.rpm && \
             echo "Building kmod with rpmbuild:" && \
             rpmbuild --rebuild \
-              --define "_topdir /root/rpmbuild" \
+              --define "_topdir /var/tmp/rpmbuild" \
               --define "kernels ${KERNEL_VERSION}" \
               --target x86_64 \
               /usr/src/akmods/evdi-kmod-*.src.rpm && \
             echo "Looking for built kmod RPM:" && \
-            find /root/rpmbuild/RPMS -name "kmod-evdi*.rpm" -ls && \
+            find /var/tmp/rpmbuild/RPMS -name "kmod-evdi*.rpm" -ls && \
             echo "Installing kmod-evdi RPM:" && \
-            rpm -Uvh /root/rpmbuild/RPMS/x86_64/kmod-evdi*.rpm && \
+            rpm -Uvh /var/tmp/rpmbuild/RPMS/x86_64/kmod-evdi*.rpm && \
             echo "Verifying module installation:" && \
             find /lib/modules/${KERNEL_VERSION} -name "evdi.ko*" -ls && \
             depmod -a "${KERNEL_VERSION}" && \
