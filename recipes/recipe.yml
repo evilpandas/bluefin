@@ -36,12 +36,10 @@ modules:
         # 6. Build evdi kernel module manually using rpmbuild (bypass akmods due to /tmp restrictions)
         # The akmodsbuild script is hardcoded to use /tmp which has permission issues in containers.
         # /root also has permission restrictions, so we use /var/tmp/rpmbuild instead.
+        # rpmbuild --rebuild handles source RPMs directly, no need to install them first.
         RUN KERNEL_VERSION=$(rpm -q kernel-devel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -n 1) && \
             echo "Building evdi module for kernel ${KERNEL_VERSION}" && \
             mkdir -p /var/tmp/rpmbuild/BUILD /var/tmp/rpmbuild/RPMS /var/tmp/rpmbuild/SOURCES /var/tmp/rpmbuild/SPECS /var/tmp/rpmbuild/SRPMS && \
-            cd /var/tmp/rpmbuild && \
-            echo "Installing source RPM:" && \
-            rpm -ivh /usr/src/akmods/evdi-kmod-*.src.rpm && \
             echo "Building kmod with rpmbuild:" && \
             rpmbuild --rebuild \
               --define "_topdir /var/tmp/rpmbuild" \
