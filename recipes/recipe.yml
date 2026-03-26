@@ -16,7 +16,10 @@ modules:
         RUN curl -Lo /etc/yum.repos.d/fedora-multimedia.repo https://negativo17.org/repos/fedora-multimedia.repo
         
         # 2. Install kernel headers and build tools needed for the driver
-        RUN rpm-ostree install kernel-devel kernel-headers akmods
+        # Note: We need to ensure kernel, kernel-devel, and kernel-headers versions match
+        RUN rpm-ostree install kernel-devel kernel-headers kernel-core akmods && \
+            echo "Installed kernel packages:" && \
+            rpm -qa | grep "^kernel"
         
         # 3. Install libevdi first (this should not pull in akmod-evdi)
         RUN rpm-ostree install libevdi
@@ -30,11 +33,19 @@ modules:
         # This prevents akmod-evdi from trying to build as root during installation.
         RUN rpm -Uvh --noscripts *.rpm && rm -f *.rpm
         
-        # 6. Manually trigger the akmod build for evdi.
-        # Note: akmods needs to run as root to install the built RPMs.
-        # Since we're already running as root in the container build, we can run it directly.
-        # The build process runs as root, so akmods can install the built modules.
-        RUN akmods --force --kernels $(rpm -q kernel-devel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -n 1) --akmod evdi
+        # 6. Manually trigger the akmod build for evdi and install the resulting kmod RPM.
+        # akmods builds a kmod-evdi RPM which contains the kernel module for the specific kernel.
+        RUN KERNEL_VERSION=$(rpm -q kernel-devel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -n 1) && \
+            echo "Building evdi module for kernel ${KERNEL_VERSION}" && \
+            akmods --force --kernels "${KERNEL_VERSION}" --akmod evdi && \
+            echo "Looking for built kmod RPM:" && \
+            find /usr/src/akmods -name "kmod-evdi*.rpm" -ls && \
+            echo "Installing kmod-evdi RPM:" && \
+            rpm -Uvh /usr/src/akmods/kmod-evdi*.rpm && \
+            echo "Verifying module installation:" && \
+            find /lib/modules/${KERNEL_VERSION} -name "evdi.ko*" -ls && \
+            depmod -a "${KERNEL_VERSION}" && \
+            modinfo evdi
 
   # Finally, our tuning script to enable the service and set config
   - type: script
