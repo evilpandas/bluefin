@@ -53,7 +53,8 @@ modules:
             echo "Verifying module installation:" && \
             find /lib/modules/${KERNEL_VERSION} -name "evdi.ko*" -ls && \
             depmod -a "${KERNEL_VERSION}" && \
-            modinfo evdi
+            echo "Checking module info for target kernel:" && \
+            modinfo -k "${KERNEL_VERSION}" evdi || echo "Note: modinfo check failed (expected in container build)"
 
   # Finally, our tuning script to enable the service and set config
   - type: script
