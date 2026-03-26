@@ -37,7 +37,15 @@ modules:
         # akmods builds a kmod-evdi RPM which contains the kernel module for the specific kernel.
         RUN KERNEL_VERSION=$(rpm -q kernel-devel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -n 1) && \
             echo "Building evdi module for kernel ${KERNEL_VERSION}" && \
-            akmods --force --kernels "${KERNEL_VERSION}" --akmod evdi && \
+            akmods --force --kernels "${KERNEL_VERSION}" --akmod evdi || \
+            (echo "=== AKMODS BUILD FAILED ===" && \
+             echo "Checking for error logs:" && \
+             find /var/cache/akmods -name "*.failed.log" -exec echo "Log: {}" \; -exec cat {} \; && \
+             echo "=== Checking akmod source ===" && \
+             ls -la /usr/src/akmods/ && \
+             echo "=== Checking kernel version mismatch ===" && \
+             rpm -qa | grep kernel && \
+             exit 1) && \
             echo "Looking for built kmod RPM:" && \
             find /usr/src/akmods -name "kmod-evdi*.rpm" -ls && \
             echo "Installing kmod-evdi RPM:" && \
