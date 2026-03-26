@@ -36,9 +36,11 @@ modules:
         # 6. Manually trigger the akmod build for evdi and install the resulting kmod RPM.
         # akmods builds a kmod-evdi RPM which contains the kernel module for the specific kernel.
         # Note: akmods doesn't return non-zero on failure, so we check for the .failed.log
+        # We need to set TMPDIR to a writable location since /tmp has permission restrictions
         RUN KERNEL_VERSION=$(rpm -q kernel-devel --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}\n' | tail -n 1) && \
             echo "Building evdi module for kernel ${KERNEL_VERSION}" && \
-            akmods --force --kernels "${KERNEL_VERSION}" --akmod evdi ; \
+            mkdir -p /var/tmp/akmods-build && \
+            TMPDIR=/var/tmp/akmods-build akmods --force --kernels "${KERNEL_VERSION}" --akmod evdi ; \
             if [ -f /var/cache/akmods/evdi/*-for-${KERNEL_VERSION}.failed.log ]; then \
               echo "=== AKMODS BUILD FAILED ===" && \
               echo "Error log contents:" && \
